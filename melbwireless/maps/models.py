@@ -64,7 +64,7 @@ class Receipt(models.Model):
         ordering = ['-id']
 
 class ReceiptLine(Receipt):
-    receipt = models.OneToOneField('Receipt', db_column='receiptid', parent_link=True)
+    receipt = models.OneToOneField('Receipt', db_column='receiptid', parent_link=True, on_delete=models.CASCADE)
     description = models.CharField(max_length=225, db_column='for')
     amount = models.FloatField()
     def __unicode__(self):
@@ -75,12 +75,12 @@ class ReceiptLine(Receipt):
 
 class MemberPayment(models.Model):
     id = models.AutoField(primary_key=True)
-    member = models.ForeignKey('Member', db_column='memberNo') # Field name made lowercase.
+    member = models.ForeignKey('Member', db_column='memberNo', on_delete=models.CASCADE) # Field name made lowercase.
     start_date = models.DateField(db_column='startDate') # Field name made lowercase.
     end_date = models.DateField(db_column='endDate') # Field name made lowercase.
     paid = models.BooleanField()
     card = models.BooleanField()
-    receipt = models.ForeignKey('Receipt', db_column='receiptNo', null=True) # Field name made lowercase.
+    receipt = models.ForeignKey('Receipt', db_column='receiptNo', null=True, on_delete=models.CASCADE) # Field name made lowercase.
     def __unicode__(self):
         return u'%s to %s, receipt #%d (%s)' % (self.start_date, self.end_date, self.receipt_id, self.member)
     class Meta:
@@ -118,7 +118,7 @@ class User(models.Model):
     email = models.EmailField(max_length=150)
     password = models.CharField(max_length=96)
     email_confirmed = models.BooleanField(db_column='confirm')
-    membership = models.ForeignKey('Member', db_column='memberNo', blank=True, null=True) # Field name made lowercase.
+    membership = models.ForeignKey('Member', db_column='memberNo', blank=True, null=True, on_delete=models.CASCADE) # Field name made lowercase.
     theme = models.CharField(max_length=60, blank=True, null=True)
     address = models.CharField(max_length=765)
     phone = models.CharField(max_length=45)
@@ -188,7 +188,7 @@ class Area(models.Model):
         ordering = ['name']
 
 class Committee(Member):
-    member = models.OneToOneField('Member', db_column='memberNo', parent_link=True)
+    member = models.OneToOneField('Member', db_column='memberNo', parent_link=True, on_delete=models.CASCADE)
     position = models.CharField(max_length=75, db_column='Position')
     year_ending = models.IntegerField(db_column='yearEnding')
     def __unicode__(self):
@@ -291,13 +291,13 @@ NODE_STATUS_CHOICES = (
 class Node(models.Model):
     id = models.CharField(max_length=9, primary_key=True)
     name = models.CharField(max_length=90)
-    owner = models.ForeignKey('User', db_column='owner', null=True)
+    owner = models.ForeignKey('User', db_column='owner', null=True, on_delete=models.CASCADE)
     suburb = models.CharField(max_length=90)
     latitude = models.FloatField()
     longitude = models.FloatField()
     altitude = models.FloatField(null=True, blank=True)
     url = models.CharField(max_length=180)
-    area = models.ForeignKey('Area', blank=True, db_column='area', null=True)
+    area = models.ForeignKey('Area', blank=True, db_column='area', null=True, on_delete=models.CASCADE)
     status = models.CharField(max_length=36, choices=NODE_STATUS_CHOICES)
     updated = models.DateTimeField()
     old_password = models.CharField(max_length=120, db_column='oldPassword')
@@ -329,9 +329,9 @@ class Node(models.Model):
         return cls._valid_ids
 
 class NodeScore(models.Model):
-    node = models.OneToOneField('Node', primary_key=True, db_column='node')
-    user = models.ForeignKey('User', db_column='username', null=True)
-    area = models.ForeignKey('Area', db_column='area', null=True)
+    node = models.OneToOneField('Node', primary_key=True, db_column='node', on_delete=models.CASCADE)
+    user = models.ForeignKey('User', db_column='username', null=True, on_delete=models.CASCADE)
+    area = models.ForeignKey('Area', db_column='area', null=True, on_delete=models.CASCADE)
     interfaces = models.IntegerField()
     links = models.IntegerField()
     distance = models.FloatField()
@@ -367,7 +367,7 @@ class FilterManager(models.Manager):
 
 class NodeHost(models.Model):
     address = models.CharField(max_length=45, primary_key=True)
-    node = models.ForeignKey('Node', db_column='node_id')
+    node = models.ForeignKey('Node', db_column='node_id', on_delete=models.CASCADE)
     host = models.CharField(max_length=384)
     objects = FilterManager('node')
     def __unicode__(self):
@@ -424,7 +424,7 @@ NODE_CLASS_CHOICES = (
 
 class Interface(models.Model):
     id = models.AutoField(primary_key=True, db_column='int_id')
-    node = models.ForeignKey('Node', db_column='node')
+    node = models.ForeignKey('Node', db_column='node', on_delete=models.CASCADE)
     objects = FilterManager('node')
     mac = models.CharField(max_length=60, blank=True)
     card_power = models.IntegerField()
@@ -452,7 +452,7 @@ class Interface(models.Model):
 class NodeIp(models.Model):
     address = models.CharField(max_length=45, primary_key=True)
     subnet = models.IntegerField(null=True, blank=True)
-    node = models.ForeignKey('Node', null=True, blank=True, db_column='node_interface')
+    node = models.ForeignKey('Node', null=True, blank=True, db_column='node_interface', on_delete=models.CASCADE)
     objects = FilterManager('node')
     type = models.CharField(max_length=24, blank=True)
     area = models.IntegerField(null=True, blank=True)
@@ -476,8 +476,8 @@ LINK_CLASS_CHOICES = (
 
 class Link(models.Model):
     id = models.AutoField(primary_key=True, db_column='link_id')
-    interface_1 = models.ForeignKey('Interface', related_name='links_1', db_column='interface_1')
-    interface_2 = models.ForeignKey('Interface', related_name='links_2', db_column='interface_2')
+    interface_1 = models.ForeignKey('Interface', related_name='links_1', db_column='interface_1', on_delete=models.CASCADE)
+    interface_2 = models.ForeignKey('Interface', related_name='links_2', db_column='interface_2', on_delete=models.CASCADE)
     objects = FilterManager('interface_1', 'interface_2')
     link_class = models.CharField(max_length=24, choices=LINK_CLASS_CHOICES, db_column='class', blank=True) # Field renamed because it was a Python reserved word. Field name made lowercase.
     def __unicode__(self):
@@ -524,7 +524,7 @@ SERVICE_TYPE_CHOICES = (
 
 class Service(models.Model):
     id = models.AutoField(primary_key=True, db_column='service_id')
-    node = models.ForeignKey('Node', db_column='node')
+    node = models.ForeignKey('Node', db_column='node', on_delete=models.CASCADE)
     objects = FilterManager('node')
     service_type = models.CharField(max_length=36, choices=SERVICE_TYPE_CHOICES, blank=True, db_column='service_type')
     ip = models.CharField(max_length=45, blank=True, db_column='service_ip')
